@@ -20,11 +20,11 @@ jobs:
       - name: Create Flutter project
         run: |
           flutter create my_flutter_app
-          echo "✅ Flutter проект создан в папке my_flutter_app/"
+          echo "✅ Flutter проект создан"
       
       - name: Commit and push back to repo
         env:
-          MY_GITHUB_TOKEN: ${{ secrets.TOK}}
+          MY_GITHUB_TOKEN: ${{ secrets.TOK }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
