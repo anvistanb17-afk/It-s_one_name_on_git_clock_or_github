@@ -1,0 +1,30 @@
+name: Create Dart Project
+
+on:
+  workflow_dispatch:  # Запуск вручную
+
+jobs:
+  create-project:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+      
+      - name: Create Dart project
+        run: |
+          # Создаём Dart проект
+          dart create -t console my_dart_app
+          
+          # Показываем структуру
+          echo "📁 Проект создан!"
+          ls -la my_dart_app/
+      
+      - name: Upload project as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-dart-project
+          path: my_dart_app/
