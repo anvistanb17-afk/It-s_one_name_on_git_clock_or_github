@@ -1,261 +1,36 @@
-name: Create Flutter App with Notifications
+name: Create Flutter Project
 
 on:
   workflow_dispatch:
-    inputs:
-      app_name:
-        description: 'Название приложения'
-        required: true
-        default: 'my_notification_app'
-        type: string
 
 jobs:
-  create-app:
+  create-flutter-project:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.MY_TOKEN }}
       
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: stable
           cache: true
       
       - name: Create Flutter project
         run: |
-          flutter create --org com.example ${{ github.event.inputs.app_name }}
-          echo "✅ Flutter проект создан в папке ${{ github.event.inputs.app_name }}/"
+          flutter create my_flutter_app
+          echo "✅ Flutter проект создан в папке my_flutter_app/"
       
-      - name: Add dependencies to pubspec.yaml
-        run: |
-          cd ${{ github.event.inputs.app_name }}
-          # Добавляем зависимость для уведомлений
-          echo "" >> pubspec.yaml
-          echo "  flutter_local_notifications: ^17.2.2" >> pubspec.yaml
-          echo "  permission_handler: ^11.3.1" >> pubspec.yaml
-      
-      - name: Create main.dart with notification code
-        run: |
-          cd ${{ github.event.inputs.app_name }}/lib
-          cat > main.dart << 'EOF'
-      import 'package:flutter/material.dart';
-      import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-      import 'package:permission_handler/permission_handler.dart';
-
-      void main() async {
-        WidgetsFlutterBinding.ensureInitialized();
-        await NotificationService.initialize();
-        runApp(const MyApp());
-      }
-
-      class MyApp extends StatelessWidget {
-        const MyApp({super.key});
-
-        @override
-        Widget build(BuildContext context) {
-          return MaterialApp(
-            title: 'Уведомления',
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-              useMaterial3: true,
-            ),
-            home: const HomePage(),
-          );
-        }
-      }
-
-      class HomePage extends StatefulWidget {
-        const HomePage({super.key});
-
-        @override
-        State<HomePage> createState() => _HomePageState();
-      }
-
-      class _HomePageState extends State<HomePage> {
-        @override
-        Widget build(BuildContext context) {
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text('Тест уведомлений'),
-              backgroundColor: Colors.blue,
-            ),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton(
-                    onPressed: () => NotificationService.showTestNotification(),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    ),
-                    child: const Text(
-                      '📢 Показать уведомление',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () => NotificationService.showScheduledNotification(),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    ),
-                    child: const Text(
-                      '⏰ Отложить на 5 секунд',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () => NotificationService.cancelAll(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    ),
-                    child: const Text(
-                      '❌ Отменить все',
-                      style: TextStyle(fontSize: 18),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-      }
-
-      class NotificationService {
-        static final FlutterLocalNotificationsPlugin _plugin =
-            FlutterLocalNotificationsPlugin();
-
-        static Future<void> initialize() async {
-          // Запрашиваем разрешения
-          await _requestPermissions();
-
-          // Настройки для Android
-          const AndroidInitializationSettings androidSettings =
-              AndroidInitializationSettings('@mipmap/ic_launcher');
-
-          // Настройки для iOS
-          const DarwinInitializationSettings iosSettings =
-              DarwinInitializationSettings(
-            requestAlertPermission: true,
-            requestBadgePermission: true,
-            requestSoundPermission: true,
-          );
-
-          const InitializationSettings settings = InitializationSettings(
-            android: androidSettings,
-            iOS: iosSettings,
-          );
-
-          await _plugin.initialize(settings);
-        }
-
-        static Future<void> _requestPermissions() async {
-          // Android 13+ нужно разрешение
-          if (await Permission.notification.isDenied) {
-            await Permission.notification.request();
-          }
-          
-          // iOS разрешения
-          final iosImpl = _plugin.resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>();
-          if (iosImpl != null) {
-            await iosImpl.requestPermissions(
-              alert: true,
-              badge: true,
-              sound: true,
-            );
-          }
-        }
-
-        static Future<void> showTestNotification() async {
-          const AndroidNotificationDetails androidDetails =
-              AndroidNotificationDetails(
-            'test_channel',
-            'Тестовые уведомления',
-            channelDescription: 'Канал для тестов',
-            importance: Importance.high,
-            priority: Priority.high,
-            playSound: true,
-          );
-
-          const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
-            presentAlert: true,
-            presentSound: true,
-            presentBadge: true,
-          );
-
-          const NotificationDetails details = NotificationDetails(
-            android: androidDetails,
-            iOS: iosDetails,
-          );
-
-          await _plugin.show(0, 'Тест', 'Это тестовое уведомление!', details);
-        }
-
-        static Future<void> showScheduledNotification() async {
-          const AndroidNotificationDetails androidDetails =
-              AndroidNotificationDetails(
-            'scheduled_channel',
-            'Отложенные уведомления',
-            channelDescription: 'Канал для отложенных',
-            importance: Importance.high,
-            priority: Priority.high,
-          );
-
-          const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
-
-          const NotificationDetails details = NotificationDetails(
-            android: androidDetails,
-            iOS: iosDetails,
-          );
-
-          final scheduledTime = DateTime.now().add(const Duration(seconds: 5));
-          await _plugin.schedule(1, 'Напоминание', 'Прошло 5 секунд!', scheduledTime, details);
-        }
-
-        static Future<void> cancelAll() async {
-          await _plugin.cancelAll();
-        }
-      }
-      EOF
-      
-      # Настройка Android разрешений
-      mkdir -p ${{ github.event.inputs.app_name }}/android/app/src/main/res/drawable
-      
-      # Добавляем разрешения в AndroidManifest.xml
-      sed -i '/<application/i\
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\
-    <uses-permission android:name="android.permission.VIBRATE" />' \
-        ${{ github.event.inputs.app_name }}/android/app/src/main/AndroidManifest.xml
-      
-      # Настройка iOS разрешений
-      cat >> ${{ github.event.inputs.app_name }}/ios/Runner/Info.plist << 'EOF'
-    <key>UIBackgroundModes</key>
-    <array>
-        <string>remote-notification</string>
-    </array>
-    <key>PermissionGroupNotification</key>
-    <string>Уведомления нужны для тестирования</string>
-    EOF
-      
-      # Обновляем минимальные версии SDK
-      sed -i 's/minSdkVersion .*/minSdkVersion 21/' \
-        ${{ github.event.inputs.app_name }}/android/app/build.gradle
-      sed -i 's/targetSdkVersion .*/targetSdkVersion 34/' \
-        ${{ github.event.inputs.app_name }}/android/app/build.gradle
-      
-      echo "✅ Весь код и разрешения добавлены!"
-      
-      - name: Commit and push
+      - name: Commit and push back to repo
+        env:
+          MY_GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add ${{ github.event.inputs.app_name }}/
-          git commit -m "Add Flutter app with notifications" || echo "Nothing to commit"
-          git push
+          
+          git remote set-url origin https://anvistanb17-afk:${MY_GITHUB_TOKEN}@github.com/anvistanb17-afk/It-s_one_name_on_git_clock_or_github.git
+          
+          git add my_flutter_app/
+          git commit -m "Add Flutter project" || echo "Nothing to commit"
+          git push origin main
