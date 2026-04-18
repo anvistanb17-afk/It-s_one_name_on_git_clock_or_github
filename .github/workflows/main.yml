@@ -24,7 +24,7 @@ jobs:
       
       - name: Commit and push back to repo
         env:
-          MY_GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+          MY_GITHUB_TOKEN: ${{ secrets.MY_TOKEN}}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
