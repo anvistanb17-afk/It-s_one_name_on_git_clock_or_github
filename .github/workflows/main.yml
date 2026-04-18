@@ -1,31 +1,24 @@
-name: Create Flutter Project
+name: Build iOS IPA for TrollStore
 
 on:
   workflow_dispatch:
-    inputs:
-      project_name:
-        description: 'Project name'
-        required: true
-        default: 'my_flutter_app'
-
-permissions:
-  contents: write
 
 jobs:
-  create:
-    runs-on: ubuntu-latest
+  build-ipa:
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.3'
-      
-      - name: Create and push
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build ios --release --no-codesign
+      - name: Create IPA
         run: |
-          flutter create ${{ github.event.inputs.project_name }}
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add ${{ github.event.inputs.project_name }}
-          git commit -m "Add Flutter project ${{ github.event.inputs.project_name }}"
-          git push
+          mkdir Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -r app.ipa Payload/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app.ipa
+          path: app.ipa
