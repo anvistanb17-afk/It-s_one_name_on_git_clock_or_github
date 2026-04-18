@@ -8,19 +8,24 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
       
-      - uses: subosito/flutter-action@v2
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
       
       - name: Create Flutter project
-        run: flutter create my_flutter_app
+        run: |
+          flutter create my_flutter_app
+          echo "✅ Проект создан"
       
       - name: Push to repository
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
+          git config user.name "anvistanb17-afk"
+          git config user.email "anvistanb17@gmail.com"
           git add my_flutter_app/
-          git commit -m "Add Flutter project" || exit 0
+          git commit -m "Add Flutter project" || echo "Nothing to commit"
           git push https://anvistanb17-afk:${{ secrets.TOK }}@github.com/anvistanb17-afk/It-s_one_name_on_git_clock_or_github.git HEAD:main
