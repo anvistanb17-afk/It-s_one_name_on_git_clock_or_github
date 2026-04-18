@@ -1,28 +1,42 @@
-name: Build iOS IPA for TrollStore
+name: Build iOS IPA
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-ipa:
+  build-ios:
     runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: ./my_flutter_app
+    
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
-      - run: flutter pub get
-      - run: flutter build ios --release --no-codesign
+          channel: stable
+      
+      - name: Go to Flutter project
+        run: cd my_flutter_app
+      
+      - name: Install dependencies
+        run: |
+          cd my_flutter_app
+          flutter pub get
+      
+      - name: Build iOS
+        run: |
+          cd my_flutter_app
+          flutter build ios --release --no-codesign
+      
       - name: Create IPA
         run: |
-          mkdir Payload
+          cd my_flutter_app
+          mkdir -p Payload
           cp -R build/ios/iphoneos/Runner.app Payload/
           zip -r app.ipa Payload/
-        working-directory: ./my_flutter_app
+          mv app.ipa ../
+      
       - uses: actions/upload-artifact@v4
         with:
           name: app.ipa
-          path: my_flutter_app/app.ipa
+          path: app.ipa
