@@ -6,12 +6,14 @@ on:
 jobs:
   build-ipa:
     runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ./my_flutter_app
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - run: cd /my_flutter_app
       - run: flutter pub get
       - run: flutter build ios --release --no-codesign
       - name: Create IPA
@@ -19,7 +21,8 @@ jobs:
           mkdir Payload
           cp -R build/ios/iphoneos/Runner.app Payload/
           zip -r app.ipa Payload/
+        working-directory: ./my_flutter_app
       - uses: actions/upload-artifact@v4
         with:
           name: app.ipa
-          path: app.ipa
+          path: my_flutter_app/app.ipa
