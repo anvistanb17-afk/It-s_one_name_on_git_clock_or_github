@@ -11,9 +11,7 @@ dependencies:
     sdk: flutter
   flutter_dotenv: ^5.1.0
   # --- Бэкенд и Realtime ---
-  supabase_flutter: ^2.6.0
-
-  flutter_local_notifications: ^17.0.0  # Добавьте эту строку
+  supabase_flutter: ^2.6.
 
   # --- Управление состоянием и локальные настройки ---
   provider: ^6.1.2
