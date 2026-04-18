@@ -1,0 +1,7 @@
+# Создаём папку и заходим в неё
+mkdir my_app && cd my_app
+
+# Создаём главный файл
+echo "void main() => print('Hello, World!');" > main.dart
+
+# Запускаем
