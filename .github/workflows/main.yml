@@ -1,30 +1,14 @@
-name: Create Dart Project
+name: test_notifier
+version: 1.0.0
+description: A simple package to send test notifications
+repository: https://github.com/anvistanb17-afk/test_notifier
 
-on:
-  workflow_dispatch:
+environment:
+  sdk: '>=3.0.0 <4.0.0'
 
-jobs:
-  create-project:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.MY_TOKEN }}
-      
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
-      
-      - name: Create Dart project inside repo
-        run: |
-          dart create -t console my_dart_app
-          echo "✅ Проект создан в папке my_dart_app/"
-      
-      - name: Commit and push back to repo
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add my_dart_app/
-          git commit -m "Add Dart project" || echo "Nothing to commit"
-          git push
+dependencies:
+  flutter_local_notifications: ^17.2.2
+
+dev_dependencies:
+  test: ^1.24.0
+  lints: ^3.0.0
