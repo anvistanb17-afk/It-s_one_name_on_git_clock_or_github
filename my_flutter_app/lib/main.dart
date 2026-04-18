@@ -43,60 +43,47 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
   void initState() {
     super.initState();
     _fetchMessages();
-    _subscribeToRealtimeMessages();
   }
 
   Future<void> _fetchMessages() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
     try {
-      // Убрано profiles(*), так как связи нет
       final data = await supabase
           .from('messages')
           .select('*')
-          .order('created_at', ascending: true);
+          .order('created_at', ascending: false)
+          .limit(100);
 
-      setState(() {
-        _messages = List<Map<String, dynamic>>.from(data);
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _messages = List<Map<String, dynamic>>.from(data);
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
-  }
-
-  void _subscribeToRealtimeMessages() {
-    supabase
-        .channel('public:messages')
-        .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
-          schema: 'public',
-          table: 'messages',
-          callback: (payload) {
-            setState(() {
-              _messages.add(payload.newRecord);
-            });
-          },
-        )
-        .subscribe();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Админ-панель: Все сообщения'),
+        title: const Text('Сообщения'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _fetchMessages,
-            tooltip: 'Обновить',
+            onPressed: () {
+              setState(() {
+                _isLoading = true;
+                _error = null;
+              });
+              _fetchMessages();
+            },
           ),
         ],
       ),
@@ -118,10 +105,16 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
             children: [
               const Icon(Icons.error_outline, color: Colors.red, size: 48),
               const SizedBox(height: 16),
-              Text('Ошибка загрузки: $_error'),
+              Text('Ошибка: $_error', textAlign: TextAlign.center),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _fetchMessages,
+                onPressed: () {
+                  setState(() {
+                    _isLoading = true;
+                    _error = null;
+                  });
+                  _fetchMessages();
+                },
                 child: const Text('Попробовать снова'),
               ),
             ],
@@ -131,7 +124,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
     }
 
     if (_messages.isEmpty) {
-      return const Center(child: Text('Сообщений пока нет.'));
+      return const Center(child: Text('Сообщений пока нет'));
     }
 
     return ListView.builder(
@@ -139,32 +132,24 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final message = _messages[index];
-        final content = message['content'] ?? message['message'] ?? 'Без текста';
+        final content = message['content'] ?? message['message'] ?? message['text'] ?? 'Без текста';
         final createdAt = message['created_at'] ?? message['timestamp'] ?? '';
-        final userId = message['user_id'] ?? 'Аноним';
+        final userId = message['user_id'] ?? message['sender_id'] ?? 'Аноним';
 
         return Card(
           margin: const EdgeInsets.only(bottom: 12.0),
           child: ListTile(
             title: Text(content),
-            subtitle: Text('User ID: $userId'),
-            trailing: Text(
-              _formatTimestamp(createdAt),
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
+            subtitle: Text('User: $userId'),
+            trailing: createdAt.isNotEmpty
+                ? Text(
+                    DateTime.tryParse(createdAt)?.toString().substring(11, 16) ?? '',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  )
+                : null,
           ),
         );
       },
     );
-  }
-
-  String _formatTimestamp(String timestamp) {
-    if (timestamp.isEmpty) return '';
-    try {
-      final dateTime = DateTime.parse(timestamp);
-      return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } catch (e) {
-      return timestamp;
-    }
   }
 }
