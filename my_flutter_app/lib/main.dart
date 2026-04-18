@@ -4,11 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. Инициализация Supabase с вашими учетными данными
   await Supabase.initialize(
     url: 'https://pwkwpiznnuoyktzgrcce.supabase.co',
-    anonKey:
-        'sb_publishable_F-Ba1Eo1lzmmWdQxS4EGnA_qSBQcEwi',
+    anonKey: 'sb_publishable_F-Ba1Eo1lzmmWdQxS4EGnA_qSBQcEwi',
   );
 
   runApp(const MyApp());
@@ -48,7 +46,6 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
     _subscribeToRealtimeMessages();
   }
 
-  // Функция для разовой загрузки всех сообщений
   Future<void> _fetchMessages() async {
     setState(() {
       _isLoading = true;
@@ -56,11 +53,10 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
     });
 
     try {
-      // Запрос к таблице 'messages'. 
-      // Если ваша таблица называется иначе, замените 'messages' на нужное имя.
+      // Убрано profiles(*), так как связи нет
       final data = await supabase
           .from('messages')
-          .select('*, profiles(*)') // Пример: если есть связь с профилями
+          .select('*')
           .order('created_at', ascending: true);
 
       setState(() {
@@ -75,10 +71,9 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
     }
   }
 
-  // Подписка на новые сообщения в реальном времени
   void _subscribeToRealtimeMessages() {
     supabase
-        .channel('public:messages') // Уникальное имя канала
+        .channel('public:messages')
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
           schema: 'public',
@@ -144,9 +139,8 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final message = _messages[index];
-        // Адаптируйте поля под структуру вашей таблицы (например, 'content', 'created_at')
-        final content = message['content'] ?? 'Без текста';
-        final createdAt = message['created_at'] ?? '';
+        final content = message['content'] ?? message['message'] ?? 'Без текста';
+        final createdAt = message['created_at'] ?? message['timestamp'] ?? '';
         final userId = message['user_id'] ?? 'Аноним';
 
         return Card(
@@ -164,14 +158,13 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
     );
   }
 
-  // Простой форматер для timestamp (можно использовать intl)
   String _formatTimestamp(String timestamp) {
     if (timestamp.isEmpty) return '';
     try {
       final dateTime = DateTime.parse(timestamp);
-      return '${dateTime.hour}:${dateTime.minute}:${dateTime.second}';
+      return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     } catch (e) {
-      return '';
+      return timestamp;
     }
   }
 }
